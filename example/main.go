@@ -55,15 +55,13 @@ func main() {
 
 		// Add before hooks
 		app.AddBefore(func(c *cli.Context) error {
-			log := logger.GetLogger("startup")
-			log.Infof("Application starting in %s mode", c.String("mode"))
+			logger.GetLogger("main").Infof("Application starting in %s mode", c.String("mode"))
 			return nil
 		}),
 
 		// Add after hooks
 		app.AddAfter(func(c *cli.Context) error {
-			log := logger.GetLogger("shutdown")
-			log.Info("Application finished")
+			logger.GetLogger("main").Info("Application finished")
 			return nil
 		}),
 	)
