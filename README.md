@@ -13,7 +13,7 @@ A reusable Go foundation module that provides common application infrastructure 
 ## Installation
 
 ```bash
-go get github.com/helloworldyuhaiyang/foundation
+go get github.com/letusgogo/quick
 ```
 
 ## Quick Start
@@ -24,7 +24,7 @@ package main
 import (
     "os"
     
-    "github.com/helloworldyuhaiyang/foundation/app"
+    "github.com/letusgogo/quick/app"
     "github.com/sirupsen/logrus"
     "github.com/urfave/cli/v2"
 )
