@@ -24,6 +24,10 @@ func NewManager() *Manager {
 	}
 }
 
+func (m *Manager) Viper() *viper.Viper {
+	return m.viper
+}
+
 // LoadFromFile loads configuration from a file
 func (m *Manager) LoadFromFile(configFile string) error {
 	if configFile == "" {
