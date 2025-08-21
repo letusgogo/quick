@@ -28,6 +28,10 @@ func (m *Manager) Viper() *viper.Viper {
 	return m.viper
 }
 
+func (m *Manager) Set(key, value string) {
+	m.viper.Set(key, value)
+}
+
 // LoadFromFile loads configuration from a file
 func (m *Manager) LoadFromFile(configFile string) error {
 	if configFile == "" {
@@ -96,6 +100,20 @@ func (m *Manager) GetStringSlice(key string) []string {
 
 // UnmarshalKey unmarshals a configuration key into a struct
 func (m *Manager) UnmarshalKey(key string, rawVal interface{}) error {
+	return m.viper.UnmarshalKey(key, rawVal)
+}
+
+// UnmarshalKeyWithEnv unmarshals a configuration key into a struct
+// and automatically syncs environment variable values before unmarshaling
+// envMappings: map[configKey]envVar (e.g., map["server.port"]="SERVER_PORT")
+func (m *Manager) UnmarshalKeyWithEnv(key string, rawVal interface{}, envMappings map[string]string) error {
+	// Auto-sync environment variables directly
+	for configKey, envVar := range envMappings {
+		if envValue := os.Getenv(envVar); envValue != "" {
+			m.viper.Set(configKey, envValue)
+			m.log.Debugf("Synced env %s=%s to config %s", envVar, envValue, configKey)
+		}
+	}
 	return m.viper.UnmarshalKey(key, rawVal)
 }
 

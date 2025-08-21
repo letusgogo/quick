@@ -6,6 +6,7 @@ A reusable Go foundation module that provides common application infrastructure 
 
 - **CLI Framework**: Built on top of `urfave/cli/v2` with common flags and lifecycle management
 - **Configuration Management**: YAML file configuration with environment variable overrides
+- **Enhanced Struct Unmarshaling**: Direct environment variable mapping for struct configuration
 - **Logging**: Structured logging with configurable levels and formats
 - **Signal Handling**: Graceful shutdown handling
 - **Environment Variable Support**: Automatic binding and override capabilities
@@ -52,16 +53,30 @@ func main() {
     }
 }
 
+type ServerConfig struct {
+    Port string `mapstructure:"port"`
+    Host string `mapstructure:"host"`
+}
+
 func runServer(c *cli.Context, myApp *app.App) error {
     // Get configuration - bound from prefixed environment variables!
-    port := myApp.Config().GetString("server.port")     // From APP_SERVER_PORT
     dbURL := myApp.Config().GetString("database.url")   // From APP_DATABASE_URL
     
-    if port == "" {
-        port = "8080"
+    // Enhanced: Get server config with environment variable sync
+    var serverConfig ServerConfig
+    envMappings := map[string]string{
+        "server.port": "SERVER_PORT",  // Custom env var without prefix
+        "server.host": "SERVER_HOST",
+    }
+    if err := myApp.Config().UnmarshalKeyWithEnv("server", &serverConfig, envMappings); err != nil {
+        return err
     }
     
-    logrus.Infof("Starting server on port %s", port)
+    if serverConfig.Port == "" {
+        serverConfig.Port = "8080"
+    }
+    
+    logrus.Infof("Starting server on %s:%s", serverConfig.Host, serverConfig.Port)
     logrus.Infof("Database URL: %s", dbURL)
     
     // Wait for shutdown signal
@@ -124,6 +139,36 @@ Viper automatically converts between formats:
 - Environment: `APP_SERVER_PORT` (with prefix "APP")
 - Dots become underscores automatically
 
+#### UnmarshalKey with Environment Variable Sync
+
+For struct unmarshaling with environment variable support, use the enhanced method:
+
+```go
+type DatabaseConfig struct {
+    Host     string `mapstructure:"host"`
+    Port     int    `mapstructure:"port"`
+    Username string `mapstructure:"username"`
+    Password string `mapstructure:"password"`
+}
+
+var dbConfig DatabaseConfig
+envMappings := map[string]string{
+    "database.host":     "DB_HOST",
+    "database.port":     "DB_PORT", 
+    "database.username": "DB_USER",
+    "database.password": "DB_PASSWORD",
+}
+
+// This will automatically sync environment variables before unmarshaling
+err := config.UnmarshalKeyWithEnv("database", &dbConfig, envMappings)
+```
+
+**Benefits:**
+- ✅ No need for pre-binding environment variables
+- ✅ Specify mappings only when needed
+- ✅ One-line solution for struct + environment variables
+- ✅ Explicit control over which variables are mapped
+
 ### Built-in Flags
 
 The foundation automatically provides these CLI flags:
@@ -159,6 +204,19 @@ Configuration management with file and environment support:
 config := myApp.Config()
 value := config.GetString("key")
 config.UnmarshalKey("section", &struct{})
+
+// Enhanced: Unmarshal with automatic environment variable sync
+type ServerConfig struct {
+    Port string `mapstructure:"port"`
+    Host string `mapstructure:"host"`
+}
+
+var serverConfig ServerConfig
+envMappings := map[string]string{
+    "server.port": "SERVER_PORT",
+    "server.host": "SERVER_HOST",
+}
+config.UnmarshalKeyWithEnv("server", &serverConfig, envMappings)
 ```
 
 ### Logger

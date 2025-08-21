@@ -10,6 +10,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+type ServerConfig struct {
+	Port string `mapstructure:"port"`
+	Host string `mapstructure:"host"`
+}
+
 func main() {
 	// Create a new application
 	myApp := app.NewApp("example-app", "Example application using foundation module")
@@ -74,19 +79,25 @@ func main() {
 
 func runServer(c *cli.Context, myApp *app.App) error {
 	log := logger.GetLogger("server")
+	// Get configuration values from env start with APP_
+	databaseURL := myApp.Config().GetString("database.url")
+	log.Infof("Database URL: %s", databaseURL)
 
 	// Get configuration values
 	port := myApp.Config().GetString("server.port")
-	if port == "" {
-		port = "8080"
-	}
-
 	host := myApp.Config().GetString("server.host")
-	if host == "" {
-		host = "localhost"
-	}
-
 	mode := c.String("mode")
+
+	// Get configuration values from struct
+	var serverConfig ServerConfig
+	envMappings := map[string]string{
+		"server.port": "SERVER_PORT",
+		"server.host": "SERVER_HOST",
+	}
+	if err := myApp.Config().UnmarshalKeyWithEnv("server", &serverConfig, envMappings); err != nil {
+		log.Fatalf("Failed to unmarshal server config: %v", err)
+	}
+	log.Infof("Server config from struct, %s:%s", serverConfig.Host, serverConfig.Port)
 
 	log.Infof("Starting HTTP server on %s:%s in %s mode", host, port, mode)
 
